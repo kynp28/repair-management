@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum WarrantyStatus {
+  IN_WARRANTY
+  OUT_OF_WARRANTY
+}
+
+enum BillingType {
+  OUT_OF_WARRANTY_PAID
+  IN_WARRANTY_FREE
+  IN_WARRANTY_PAID
+}
+
+enum RepairStatus {
+  RECEIVED
+  CHECKING
+  WAITING_APPROVAL
+  WAITING_PARTS
+  REPAIRING
+  READY_FOR_PAYMENT
+  COMPLETED
+  CANCELLED
+}
+
+model Customer {
+  id             Int           @id @default(autoincrement())
+  name           String
+  phone          String
+  address        String?       @db.Text
+  isWeAreFriends Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  repairOrders   RepairOrder[]
+}
+
+model CatalogItem {
+  id           Int     @id @default(autoincrement())
+  barcode      String? @unique
+  description  String
+  defaultPrice Decimal @default(0) @db.Decimal(10, 2)
+  itemType     String  @default("PART")
+}
+
+model RepairOrder {
+  id                    Int               @id @default(autoincrement())
+  trackingUuid          String            @unique @default(uuid())
+  bookNo                String?
+  orderNo               String            @unique
+  receivedDate          DateTime          @default(now())
+  jobType               String            @default("ซ่อม")
+  customerId            Int
+  customer              Customer          @relation(fields: [customerId], references: [id])
+  machineBrandModel     String
+  serialNumber          String?
+  warrantyStatus        WarrantyStatus    @default(OUT_OF_WARRANTY)
+  warrantyExpDate       DateTime?
+  customerReportedIssue String            @db.Text
+  technicianNote        String?           @db.Text
+  accessories           Json
+  hasLoanerMachine      Boolean           @default(false)
+  billingType           BillingType?
+  careInstructions      Json?
+  warningNote           String?           @db.Text
+  operatingHours        Decimal?          @db.Decimal(5, 2)
+  subTotal              Decimal           @default(0) @db.Decimal(10, 2)
+  grandTotal            Decimal           @default(0) @db.Decimal(10, 2)
+  currentStatus         RepairStatus      @default(RECEIVED)
+  receivedBy            String?
+  technicianName        String?
+  items                 RepairOrderItem[]
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+}
+
+model RepairOrderItem {
+  id            Int         @id @default(autoincrement())
+  repairOrderId Int
+  repairOrder   RepairOrder @relation(fields: [repairOrderId], references: [id], onDelete: Cascade)
+  itemOrder     Int
+  barcode       String?
+  description   String
+  quantity      Int         @default(1)
+  unitPrice     Decimal     @default(0) @db.Decimal(10, 2)
+  amount        Decimal     @default(0) @db.Decimal(10, 2)
+}

@@ -1,0 +1,19 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: homglai_repair_mysql
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword123
+      MYSQL_DATABASE: homglai_service
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: adminpassword123
+      TZ: Asia/Bangkok
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql_repair_data:/var/lib/mysql
+    restart: unless-stopped
+
+volumes:
+  mysql_repair_data:

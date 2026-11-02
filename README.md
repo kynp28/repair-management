@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Homglai Repair Tracking System — ร้านหอมไกล ชลบุรี
 
-## Getting Started
+ระบบแจ้งซ่อมและติดตามสถานะงานซ่อมแบบเรียลไทม์ พัฒนาด้วย **Next.js (App Router)**, **Prisma ORM**, **MySQL 8.0 (Docker)** และ **Swagger UI** สำหรับทดสอบ API
 
-First, run the development server:
+---
 
+## 🚀 วิธีติดตั้งและรันโปรเจกต์ (สำหรับทีมพัฒนา)
+
+### 1. ติดตั้งแพ็กเกจ
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. รันฐานข้อมูล MySQL 8.0 ด้วย Docker
+เปิด Docker Desktop แล้วรันคำสั่ง:
+```bash
+docker compose up -d
+```
+*(MySQL จะทำงานที่พอร์ต `3307` ชื่อฐานข้อมูล `homglai_service` เพื่อไม่ให้ชนกับพอร์ต `3306` เดิมในเครื่อง)*
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. ตั้งค่าไฟล์ `.env` และเตรียมฐานข้อมูล (Prisma)
+คัดลอกไฟล์ `.env.example` ไปเป็น `.env`:
+```bash
+cp .env.example .env
+```
+ภายในไฟล์ `.env` จะใช้ค่า:
+```env
+DATABASE_URL="mysql://root:rootpassword123@localhost:3307/homglai_service"
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+จากนั้นรันคำสั่งสร้างตาราง (Migration) และนำเข้าข้อมูลตัวอย่าง (Seed):
+```bash
+npx prisma migrate dev
+npx tsx prisma/seed.ts
+```
 
-## Learn More
+### 4. รันเซิร์ฟเวอร์และเปิดหน้า Swagger API Docs
+```bash
+npm run dev
+```
+- 🌐 **หน้าเว็บหลัก**: [http://localhost:3000](http://localhost:3000)
+- 📄 **หน้า Swagger UI (ทดสอบยิง API)**: [http://localhost:3000/api-docs](http://localhost:3000/api-docs)
+- 🔗 **OpenAPI JSON Spec**: [http://localhost:3000/api/doc](http://localhost:3000/api/doc)
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📌 รายการ API Endpoints หลัก
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Method | Endpoint | คำอธิบาย |
+| :--- | :--- | :--- |
+| `GET` | `/api/catalog` | ดึงรายการอะไหล่และบริการมาตรฐานทั้งหมด |
+| `POST` | `/api/catalog` | เพิ่มรายการอะไหล่/บริการใหม่เข้าคลัง |
+| `GET` | `/api/repair-orders` | ดึงรายการใบแจ้งซ่อมทั้งหมด (กรอง `status` หรือค้นหา `search`) |
+| `POST` | `/api/repair-orders` | พนักงานหน้าร้านสร้างใบรับซ่อมใหม่ (สร้างลูกค้าใหม่อัตโนมัติถ้ายังไม่มีเบอร์โทร) |
+| `GET` | `/api/repair-orders/[id]` | ดูรายละเอียดใบแจ้งซ่อมตาม ID |
+| `PATCH` | `/api/repair-orders/[id]/quote` | ช่างบันทึกผลตรวจเช็ค อัปเดตรายการอะไหล่ คำนวณยอดรวม และเปลี่ยนสถานะรออนุมัติ |
+| `PATCH` | `/api/repair-orders/[id]/status` | ช่าง/แอดมินอัปเดตสถานะงานซ่อมแบบเรียลไทม์ |
+| `GET` | `/api/track/[trackingUuid]` | ลูกค้าดูสถานะใบงานซ่อม รายการอะไหล่ และยอดรวมแบบไม่ต้องล็อกอิน |
+| `POST` | `/api/track/[trackingUuid]/approve` | ลูกค้ากดอนุมัติซ่อม (`APPROVE`) หรือยกเลิกซ่อม (`CANCEL`) |
